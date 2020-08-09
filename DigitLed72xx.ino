@@ -1,4 +1,4 @@
-#include "DigitLed72xxController.h"
+#include "DigitLed72xx.h"
 /**
  * @brief This class provied a control interface for MAX7219 and MAX7221 7-seg Led display drivers.
  * @details This Controller Class is mainly target at 7-Segment Led Displays.
@@ -25,22 +25,27 @@
          * nDevice  number of devices that can be controled
          */
 
-DigitLed72xxController::DigitLed72xxController(unsigned char csPin, unsigned char nDevice)
+DigitLed72xx::DigitLed72xx(unsigned char csPin, unsigned char nDevice, SPIClass& spiClass) //: spi(&spiClass)
 {
   // Set load pin to output
   pinLOAD_CS = csPin;
   pinMode(pinLOAD_CS, OUTPUT);
   digitalWrite(pinLOAD_CS,HIGH);
-//  #define DIN_PIN 11
-//  #define CLK_PIN 13
-//  pinMode(DIN_PIN,OUTPUT);
-//  pinMode(CLK_PIN,OUTPUT);
-//  SPI.setBitOrder(MSBFIRST);
-//  SPI.setDataMode(SPI_MODE0);
+  if ( !spi )
+  {
+    spi = &SPI; 
+    
   // Start SPI
-  SPI.begin();
+  spi->begin();
   
-  SPI.beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+#if SPI_HAS_TRANSACTION
+  spi->beginTransaction(SPISettings (SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+#else
+  spi->setClockDivider(SPI_CLOCK_DIV16);  // 1 MHz clock
+  spi->setBitOrder(MSBFIRST);
+  spi->setDataMode(SPI_MODE0);
+#endif // SPI_HAS_TRANSACTION
+  } else { spi = &spiClass; }
   
   //we go into shutdown-mode on startup
   spiWrite(SHUTDOWN_ADDR, OP_OFF);
@@ -61,27 +66,30 @@ DigitLed72xxController::DigitLed72xxController(unsigned char csPin, unsigned cha
     // shiftout no_op
     shiftAll();
   }
-   //SPI.endTransaction();
+  
+//#if SPI_HAS_TRANSACTION
+//  spi->endTransaction ();   // allow external interrupts to fire now
+//#endif // SPI_HAS_TRANSACTION  
 }
 
-void DigitLed72xxController::shiftAll(unsigned char nDevice = 1)
+void DigitLed72xx::shiftAll(unsigned char nDevice = 1)
   {    
     // shiftout no_op
-    for(unsigned char i=nDevice;i < maxDevices;++i) // (maxDevices - 1)
+    for(unsigned char i=nDevice;i < maxDevices;++i) // (maxDevices - nDevice)
       spiWrite(NOOP_ADDR, OP_OFF);
   }
 
-void DigitLed72xxController::end ()
+void DigitLed72xx::end ()
   {
   //sendToAll shutdown mode (ie. turn it off)
   spiWrite(SHUTDOWN_ADDR, OP_OFF); 
     // shiftout no_op
   shiftAll();
 
-    SPI.end ();
+    spi->end ();
   }
 
-void DigitLed72xxController::setBright(unsigned char brightness, unsigned char nDevice) 
+void DigitLed72xx::setBright(unsigned char brightness, unsigned char nDevice) 
 {
     if (brightness > 15)
         return;
@@ -96,7 +104,7 @@ void DigitLed72xxController::setBright(unsigned char brightness, unsigned char n
          * limit  number of digits to be displayed (1..8)
          * nDevice address of the display to control
          */    
-void DigitLed72xxController::setDigitLimit(unsigned char limit, unsigned char nDevice) 
+void DigitLed72xx::setDigitLimit(unsigned char limit, unsigned char nDevice) 
 {
   if(limit > 7)
       return;
@@ -104,42 +112,44 @@ void DigitLed72xxController::setDigitLimit(unsigned char limit, unsigned char nD
   write(SCANLIMIT_ADDR, limit, nDevice);
 }
 
-void DigitLed72xxController::clear(unsigned char nDevice) 
+void DigitLed72xx::clear(unsigned char nDevice) 
 {
-  if (nDevice > maxDevices)
-    return;
-  if (nDevice > 0)
+  if (nDevice >= maxDevices)
+   {
+    for (unsigned char i = 1; i <=_digitLimit; ++i) 
+      spiWrite(i, MAX72b); // blank
+  shiftAll();
+   }
+  else
   {
        //clearSegments
       for (unsigned char i = 1; i<=_digitLimit; ++i)
           spiTransfer(i, MAX72b, nDevice);
       return;
   }
-  for (unsigned char i = 1; i <=_digitLimit; ++i) 
-      spiWrite(i, MAX72b); // blank
-  shiftAll();
+ 
 }
 
-void DigitLed72xxController::on(unsigned char nDevice) 
+void DigitLed72xx::on(unsigned char nDevice) 
 {
   write(SHUTDOWN_ADDR, OP_ON, nDevice);
 }
 
-void DigitLed72xxController::off(unsigned char nDevice) 
+void DigitLed72xx::off(unsigned char nDevice) 
 {
   write(SHUTDOWN_ADDR, OP_OFF, nDevice);
 }
 
-void DigitLed72xxController::setDigit(unsigned char digit, byte value, byte dp, unsigned char nDevice)
+void DigitLed72xx::setDigit(unsigned char digit, byte value, byte dp, unsigned char nDevice)
 {
-  if(digit >= _digitLimit)
+  if(digit > _digitLimit)
         return;
   if (dp>0)
       dp = DP_FLAG;
-  write(digit+1,value|dp, nDevice);
+  write(digit,value|dp, nDevice);
 }
 
-void DigitLed72xxController::printDigit(long number, byte startDigit, unsigned char nDevice)
+void DigitLed72xx::printDigit(long number, byte startDigit, unsigned char nDevice)
 {
   if(nDevice > maxDevices || startDigit >= _digitLimit)
         return;
@@ -157,56 +167,56 @@ void DigitLed72xxController::printDigit(long number, byte startDigit, unsigned c
   }
 }
 
-inline void DigitLed72xxController::printDigits(long number, unsigned char nDevice)
+inline void DigitLed72xx::printDigits(long number, unsigned char nDevice)
 {
   printDigit(number, 0, nDevice);
 }
 
-void DigitLed72xxController::setChar(unsigned char digit, byte value, byte dp, unsigned char nDevice)
+void DigitLed72xx::setChar(unsigned char digit, byte value, byte dp, unsigned char nDevice)
 {
   if(nDevice > maxDevices || digit >= _digitLimit)
         return;
   
 }
 
-//void DigitLed72xxController::DigitLedDisplay::showDots(uint8_t dots, uint8_t* digits){
+//void DigitLed72xx::DigitLedDisplay::showDots(uint8_t dots, uint8_t* digits){
 //    for(int i = 0; i < 4; ++i){
 //        digits[i] |= (dots & 0x80);
 //        dots <<= 1;
 //    }
 //}
-void DigitLed72xxController::write(byte address, byte data, unsigned char nDevice)
+void DigitLed72xx::write(byte address, byte data, unsigned char nDevice)
 {
-  if(nDevice > maxDevices)
-        return;
-  if (nDevice > 0)
-      spiTransfer(address, data, nDevice);
-  else {
+  if(nDevice >= maxDevices)
+  {
       spiWrite(address,data);
       shiftAll();
   }
+  else
+      spiTransfer(address, data, nDevice);
+
 }
 
 /* Write to one of the drivers registers. No-ops are sent to all other 
    drivers in the chain.
    Driver is the driver number in the chain 
    */
-void DigitLed72xxController::spiTransfer(byte opcode, byte data, unsigned char addr)
+void DigitLed72xx::spiTransfer(byte opcode, byte data, unsigned char addr)
 {
-  //SPI.beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+  //spi->beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
 
-  // Ensure LOAD/CS is LOW
+  // Set LOAD/CS to LOW
   digitalWrite(pinLOAD_CS, LOW);
   
   // Send the register address
-  SPI.transfer(opcode);
+  spi->transfer(opcode);
   // Send the value
-  SPI.transfer(data);
+  spi->transfer(data);
       
   // shiftout no_op
   for(unsigned char i=0;i <  maxDevices;++i)
   {
-      if(i == (addr - 1))
+      if(i == (addr ))
       {
         // Tell chip to load in data
         digitalWrite(pinLOAD_CS, HIGH);
@@ -214,13 +224,13 @@ void DigitLed72xxController::spiTransfer(byte opcode, byte data, unsigned char a
         // Ensure LOAD/CS is LOW
         digitalWrite(pinLOAD_CS, LOW);        
       } 
-      SPI.transfer(NOOP_ADDR);
-      SPI.transfer(OP_OFF); 
+      spi->transfer(NOOP_ADDR);
+      spi->transfer(OP_OFF); 
   }
    // Tell chip to load in data
   digitalWrite(pinLOAD_CS, HIGH);
 
-  //SPI.endTransaction();
+  //spi->endTransaction();
 }
 
 /**
@@ -229,9 +239,9 @@ void DigitLed72xxController::spiTransfer(byte opcode, byte data, unsigned char a
  * @param address The register to load data into
  * @param value   Value to store in the register
  */
-void DigitLed72xxController::spiWrite(byte opcode, byte data)
+void DigitLed72xx::spiWrite(byte opcode, byte data)
 {
-  //SPI.beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+  //spi->beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
   
     //Datasheet calls for 25ns between LOAD/#CS going low and the start of the
     //transfer, an Arduino running at 20MHz (4MHz faster than the Uno, mind you)
@@ -240,16 +250,16 @@ void DigitLed72xxController::spiWrite(byte opcode, byte data)
   digitalWrite(pinLOAD_CS, LOW);
 
   // Send the register address
-  SPI.transfer(opcode);
+  spi->transfer(opcode);
 
   // Send the value
-  SPI.transfer(data);
+  spi->transfer(data);
 
   // Tell chip to load in data
   //__asm("nop");
   digitalWrite(pinLOAD_CS, HIGH);
 
-  //SPI.endTransaction();
+  //spi->endTransaction();
 }
 
 

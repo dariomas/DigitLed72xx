@@ -88,13 +88,15 @@
 #define MAX72b      (0xF) // ' '
 #define DP_FLAG  (B10000000) // '.'
 
-class DigitLed72xxController {
+class DigitLed72xx {
     private :
         /* Send out a single command to the device */
         void spiTransfer(byte opcode, byte data, unsigned char addr);
         void spiWrite(byte opcode, byte data);
         void shiftAll(unsigned char nDevice = 1);
-
+        
+       // Pointer to the SPI class
+       SPIClass* spi;
        /* This one is driven LOW for chip selection */
         unsigned char pinLOAD_CS;
         /* The maximum number of devices we use */
@@ -109,13 +111,13 @@ class DigitLed72xxController {
         * @param csPin The pin to select the device (CS)
         * @param nDevice The number of connected devices that can be controled (defualt 1)
         */
-    DigitLed72xxController(unsigned char csPin, unsigned char nDevice = 1);
+    DigitLed72xx(unsigned char csPin = SS, unsigned char nDevice = 1, SPIClass& spiClass = SPI);
 
         /*
         * Description:
         *   This is the destructor, it simply calls end().
         */
-    ~DigitLed72xxController() { end(); };
+    ~DigitLed72xx() { end(); };
 
        /*
         * Description:
@@ -129,7 +131,7 @@ class DigitLed72xxController {
      * @param brightness the new brightness of the chain. (0..15)
      * @param nDevice the address of the device to control
      */
-    void setBright(unsigned char brightness, unsigned char nDevice = 1);
+    void setBright(unsigned char brightness, unsigned char nDevice = 0);
  
     /**
      * @brief Set the number of digits to be displayed.
@@ -137,7 +139,7 @@ class DigitLed72xxController {
      * @param limit The number of digits to be displayed (1..8)
      * @param nDevice The device which should be addressed
      */
-    void setDigitLimit(unsigned char limit, unsigned char nDevice = 1);
+    void setDigitLimit(unsigned char limit, unsigned char nDevice = 0);
     
 
         /* 
@@ -151,9 +153,9 @@ class DigitLed72xxController {
          * value  the value to be displayed. (0x00..0x0F)
          * dp sets the decimal point.
          */
-    void setDigit(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 1);
-    void printDigit(long number, byte startDigit = 0, unsigned char nDevice = 1);
-    inline void printDigits(long number, unsigned char nDevice = 1);
+    void setDigit(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 0);
+    void printDigit(long number, byte startDigit = 0, unsigned char nDevice = 0);
+    inline void printDigits(long number, unsigned char nDevice = 0);
     
 /**
  * Light up 'dot' at position.
@@ -178,21 +180,21 @@ class DigitLed72xxController {
          * value  the character to be displayed. 
          * dp sets the decimal point.
          */
-    void setChar(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 1);
+    void setChar(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 0);
 
         /* 
          * @brief Switch all Leds on the display off. 
          * @param nDevice address of the display to control
          */
-    void clear(unsigned char nDevice = 1);
+    void clear(unsigned char nDevice = 0);
 
         /* 
          * @brief Set the shutdown (power saving) mode for the device
          * @param nDevice The address of the display to control
          * @note the device goes into power-down mode or normal operation.
          */    
-    void on(unsigned char nDevice = 1);
-    void off(unsigned char nDevice = 1);   
+    void on(unsigned char nDevice = 0);
+    void off(unsigned char nDevice = 0);   
 
 
 
@@ -203,5 +205,5 @@ class DigitLed72xxController {
          */
         //char getDeviceCount();
 
-    void write(byte address, byte data, unsigned char nDevice = 1);
+    void write(byte address, byte data, unsigned char nDevice = 0);
 }; 
