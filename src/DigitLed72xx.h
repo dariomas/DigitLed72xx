@@ -1,3 +1,23 @@
+/* Arduino MAX7219/7221 Library
+ * See the README file for author and licensing information. In case it's
+ * missing from your distribution, use the one here as the authoritative
+ * version: https://github.com/dariomas/DigitLed72xx/blob/master/README.md
+ *
+ * This library is for use with Maxim's MAX7219 and MAX7221 LED driver chips.
+ * Austria Micro Systems' AS1100/1106/1107 is a pin-for-pin compatible and is
+ * also supported.
+ * See the example sketches to learn how to use the library in your code.
+ *
+ * This is the main include file for the library.
+ * 
+ * ---------------------------------------------------------------------------
+ * Copyright (c) 2020 Dariomas
+ *
+ * MIT license, all text here must be included in any redistribution.
+ */
+
+// version 0.0.1
+
 #pragma once
 
 #if (ARDUINO >= 100)
@@ -86,13 +106,17 @@
 
 class DigitLed72xx {
     private :
-        /* Send out a single command to the device */
+        /*! 
+         * @brief Send out a single command to the device 
+         * 
+         */
         void spiTransfer(byte opcode, byte data, unsigned char addr);
         void spiWrite(byte opcode, byte data);
         void shiftAll(unsigned char nDevice = 1);
-       /*
-        * Description:
-        *    Stop the SPI and sends a shutdown command to the MAX7219(s).
+
+       /*!
+        * @brief Stop the SPI and sends a shutdown command to the MAX7219(s).
+        * 
         */
        inline void end(void);
         
@@ -109,30 +133,35 @@ class DigitLed72xx {
         };
         
   public:
-       /*
-        * @brief Construct a new DigitLed72xx controller for use with hardware SPI
-        * 
-        * @param csPin The pin to select the device (CS)
-        * @param nDevice The number of connected devices that can be controled (defualt 1)
-        * @param spiClass The oject that drives the SPI hardware (a SPIClass instance)
-        */
+    /**
+     * @brief Construct a new DigitLed72xx controller for use with hardware SPI
+     * 
+     * @param csPin The pin to select the device (CS)
+     * @param nDevice The number of connected devices that can be controled (defualt 1)
+     * @param spiClass The oject that drives the SPI hardware (a SPIClass instance)
+     **/
     DigitLed72xx(unsigned char csPin = SS, unsigned char nDevice = 1, SPIClass& spiClass = SPI);
 
-        /*
-        * Description:
-        *   This is the destructor, it simply calls end() and free memory.
+        /**
+        * @brief This is the destructor, it simply calls end() to free memory.
+        * 
         */
     ~DigitLed72xx() { 
       end(); 
-      if (_digitLimit) delete[] _digitLimit;
     }
+
+    /*!
+     *    @brief  Initializes SPI bus and sets CS pin high
+     *
+     */
+    inline void begin(void);
 
      /**
      * @brief Set the Intensity of the whole display to the given value.
      * @note if you want to save more energy disable segments you don't need or lower the brightness.
      * @param brightness the new brightness of the chain. (0..15)
      * @param nDevice the address of the device to control
-     */
+     **/
     void setBright(unsigned char brightness, unsigned char nDevice = 0);
  
     /**
@@ -149,39 +178,39 @@ class DigitLed72xx {
 //      return _digitLimit[nDevice];
 //    }
 
-        /* 
+        /** 
          * @brief Display a single digit on a 7-Segment Display
          * @note There are only a few characters that make sense here :
          *  '0','1','2','3','4','5','6','7','8','9',
          *  '-',' ' 
          * Params:
-         * nDevice The address of the display
-         * digit  The position of the digit on the display (0..7)
-         * value  The value to be displayed. (0x00..0x09)
-         * dp sets The decimal point.
-         */
+         * @param nDevice The address of the display
+         * @param digit  The position of the digit on the display (0..7)
+         * @param value  The value to be displayed. (0x00..0x09)
+         * @param dp sets The decimal point.
+         **/
     void setDigit(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 0);
 
-        /* 
+        /** 
          * @brief Display a whole number on a 7-Segment Display
          * @note There are only a few characters that make sense here :
          *  '0','1','2','3','4','5','6','7','8','9',
          *  '-',' ' 
          * Params:
-         * nDevice Theaddress of the display
-         * startDigit  The position of the digit on the display (0..7)
-         * number  The value to be displayed and sets the decimal point every thousands.
+         * @param nDevice Theaddress of the display
+         * @param startDigit  The position of the digit on the display (0..7)
+         * @param number  The value to be displayed and sets the decimal point every thousands.
          */
     void printDigit(long number, unsigned char nDevice = 0, byte startDigit = 0);
 //    inline void printDigits(long number, unsigned char nDevice = 0);
     
-/**
+/*
  * Light up 'dot' at position.
  * @param position: dot position from range <0, 7>
  */
 //void MAX7219_display_dot(uint8_t position);
 
-/**
+/*
  * Turn off 'dot' at position.
  * @param position: dot position from range <0, 7>
  */
@@ -198,17 +227,17 @@ class DigitLed72xx {
          */
 //    void setChar(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 0);
 
-        /* 
+        /** 
          * @brief Switch all Leds on the display off. 
          * @param nDevice address of the display to control
-         */
+         **/
     void clear(unsigned char nDevice = 0);
 
-        /* 
+        /** 
          * @brief Set the shutdown (power saving) mode for the device
          * @param nDevice The address of the display to control
          * @note the device goes into power-down mode or normal operation.
-         */    
+         **/    
     inline void on(unsigned char nDevice = 0);
     inline void off(unsigned char nDevice = 0);   
 

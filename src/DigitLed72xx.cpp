@@ -1,3 +1,24 @@
+/* Arduino MAX7219/7221 Library
+ * See the README file for author and licensing information. In case it's
+ * missing from your distribution, use the one here as the authoritative
+ * version: https://github.com/dariomas/DigitLed72xx/blob/master/README.md
+ *
+ * This library is for use with Maxim's MAX7219 and MAX7221 LED driver chips.
+ * Austria Micro Systems' AS1100/1106/1107 is a pin-for-pin compatible and is
+ * also supported.
+ * See the example sketches to learn how to use the library in your code.
+ *
+ * This is the main code file for the library.
+ * See the header file for better function documentation.
+ * 
+ * ---------------------------------------------------------------------------
+ * Copyright (c) 2020 Dariomas
+ *
+ * MIT license, all text here must be included in any redistribution.
+ */
+
+// version 0.0.1
+
 #include "DigitLed72xx.h"
 /**
  * @brief This class provied a control interface for MAX7219 and MAX7221 7-seg Led display drivers.
@@ -14,23 +35,31 @@
  * Library Description
  *
  *  - The host communicates with the MAX72xx using hardware SPI 
- *
  */
 
-        /* 
-         * Create a new controler 
-         * Params :
-         * csPin    CS/LOAD pin for selecting the device 
-         * nDevice  number of devices that can be controled
-         * spiClass instance of SPI class
-         */
-
+/*!
+ * @brief Construct a new DigitLed72xx controller for use with hardware SPI
+ * 
+ * @param  csPin    CS/LOAD pin for selecting the device 
+ * @param  nDevice  number of devices that can be controled
+ * @param  spiClass instance of SPI class
+ * 
+ */
 DigitLed72xx::DigitLed72xx(unsigned char csPin, unsigned char nDevice, SPIClass& spiClass):spi(&spiClass), pinLOAD_CS(csPin), maxDevices(nDevice)
 {
   _digitLimit = new byte[maxDevices];
   for (byte i=0; i < maxDevices; ++i) {
     _digitLimit[i] = 8;
   }
+  begin();
+}
+
+/*!
+ *    @brief  Initializes SPI bus and sets CS pin high
+ *
+ */
+inline void DigitLed72xx::begin(void)
+{
   // Set load pin to output
   //pinLOAD_CS = csPin;
   pinMode(pinLOAD_CS, OUTPUT);
@@ -58,7 +87,7 @@ DigitLed72xx::DigitLed72xx(unsigned char csPin, unsigned char nDevice, SPIClass&
     spiWrite(i, MAX72b); // blank
   spiWrite(BRIGHTNESS_ADDR,0);  // min power
 //  spiWrite(SHUTDOWN_ADDR, OP_ON); 
-  if (nDevice > 1)
+  if (maxDevices > 1)
     shiftAll(); // shiftout no_op
 
 #if defined(SPI_HAS_TRANSACTION)
@@ -66,18 +95,19 @@ DigitLed72xx::DigitLed72xx(unsigned char csPin, unsigned char nDevice, SPIClass&
 #endif // SPI_HAS_TRANSACTION
 }
 
+inline void DigitLed72xx::end ()
+  {
+    if (_digitLimit) delete[] _digitLimit;
+    //sendToAll shutdown mode (ie. turn it off)
+    write(SHUTDOWN_ADDR, OP_OFF, maxDevices ); 
+    spi->end ();
+  }
+
 void DigitLed72xx::shiftAll(unsigned char nDevice = 1)
   {    
     // shiftout no_op
     for(unsigned char i=nDevice;i < maxDevices;++i) // (maxDevices - nDevice)
       spiWrite(NOOP_ADDR, OP_OFF);
-  }
-
-inline void DigitLed72xx::end ()
-  {
-    //sendToAll shutdown mode (ie. turn it off)
-    write(SHUTDOWN_ADDR, OP_OFF, maxDevices ); 
-    spi->end ();
   }
 
 void DigitLed72xx::setBright(unsigned char brightness, unsigned char nDevice) 
@@ -87,13 +117,12 @@ void DigitLed72xx::setBright(unsigned char brightness, unsigned char nDevice)
     write(BRIGHTNESS_ADDR, brightness, nDevice);
 }
 
-        /* 
-         * Set the number of digits to be displayed.
+        /*!
+         * @brief Set the number of digits to be displayed.
          * See datasheet for sideeffects of the scanlimit on the brightness
          * of the display.
-         * Params :
-         * limit  number of digits to be displayed (1..8)
-         * nDevice address of the display to control
+         * @param limit  number of digits to be displayed (1..8)
+         * @param nDevice address of the display to control
          */    
 void DigitLed72xx::setDigitLimit(unsigned char limit, unsigned char nDevice) 
 {
@@ -182,10 +211,11 @@ void DigitLed72xx::write(byte address, byte data, unsigned char nDevice)
       spiTransfer(address, data, nDevice);
 }
 
-/* Write to one of the drivers registers. No-ops are sent to all other 
-   drivers in the chain.
-   addr is the driver number in the chain 
-   */
+/*! 
+ * @brief Write to one of the drivers registers. No-ops are sent to all other 
+ * drivers in the chain.
+ * @param addr is the driver number in the chain 
+*/
 void DigitLed72xx::spiTransfer(byte opcode, byte data, unsigned char addr)
 {
 #if defined(SPI_HAS_TRANSACTION)

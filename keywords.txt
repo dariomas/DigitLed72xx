@@ -1,0 +1,41 @@
+#######################################
+# Syntax Coloring Map For DigitLed72xx
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+DigitLed72xx    KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	    KEYWORD2
+setBright	KEYWORD2
+setLimit	KEYWORD2
+setDigit	KEYWORD2
+printDigit	KEYWORD2
+clear   	KEYWORD2
+on		    KEYWORD2
+off		    KEYWORD2
+write		KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+SPIMAXSPEED		    LITERAL1
+PRINT_DIGIT_NEG		LITERAL1
+NOOP_ADDR		    LITERAL1
+DECODEMODE_ADDR		LITERAL1
+BRIGHTNESS_ADDR		LITERAL1
+SCANLIMIT_ADDR		LITERAL1
+SHUTDOWN_ADDR		LITERAL1
+DISPLAYTEST_ADDR	LITERAL1
+OP_OFF			    LITERAL1
+OP_ON			    LITERAL1
+MAX72d			    LITERAL1
+MAX72b			    LITERAL1
+DP_FLAG			    LITERAL1
