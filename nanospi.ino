@@ -14,7 +14,7 @@
   
  */
 #include <SPI.h>
-#define SPIMAXSPEED (10000000)
+#define SPIMAXSPEED (20000000)
 // Uncomment to print minus sign on negative numbers
 #define PRINT_DIGIT_NEG 1
 #include "DigitLed72xx.h"
@@ -29,9 +29,9 @@ void setup()
 {
   ld.on(2);
   
-  ld.printDigits(76543210, 0);
+  ld.printDigit(76543210);
   delay(500);
-  ld.printDigits(12345678, 1);
+  ld.printDigit(43218765, 1);
   delay(500);
 
 }
@@ -41,23 +41,23 @@ void loop()
 {
    n = n % (NCHIP + 1);
   /* Prints data to the display */
-  ld.printDigits(12345678, n);
+  ld.printDigit(12345678, n);
   delay(900);
   ld.clear(n);
 
-  ld.printDigits(-2222222, n);
+  ld.printDigit(-2222222, n);
   delay(500);
   ld.clear(n);
 
-  ld.printDigits(-44444444, n);
+  ld.printDigit(44444444, n);
   delay(500);
   ld.clear(n);
 
   for (int i = 0; i < 1001; i++) {
-    ld.printDigits(i, n);
+    ld.printDigit(i, n);
 
     /* Start From Digit 4 */
-    ld.printDigit(i, 4, n);
+    ld.printDigit(i, n, 4);
     delay(20);
   }
 
@@ -76,7 +76,7 @@ void loop()
   delay(500);
 
   for (long i = 0; i < 2000; i++) {
-    ld.printDigits(i, n);
+    ld.printDigit(i, n);
     i += 10;
     delay(50);
   }

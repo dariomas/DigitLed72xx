@@ -2,7 +2,7 @@
 /**
  * @brief This class provied a control interface for MAX7219 and MAX7221 7-seg Led display drivers.
  * @details This Controller Class is mainly target at 7-Segment Led Displays.
- * @warning This object is not thread safe yet.
+ * @warning This object is not thread safe.
  * @note This library implements the 7-segment numeric LED display of 8 digits
  * 
  * @todo ...
@@ -14,7 +14,6 @@
  * Library Description
  *
  *  - The host communicates with the MAX72xx using hardware SPI 
- *  - SPI speed can be configured in DigitLed72xxController.h
  *
  */
 
@@ -23,6 +22,7 @@
          * Params :
          * csPin    CS/LOAD pin for selecting the device 
          * nDevice  number of devices that can be controled
+         * spiClass instance of SPI class
          */
 
 DigitLed72xx::DigitLed72xx(unsigned char csPin, unsigned char nDevice, SPIClass& spiClass):spi(&spiClass), pinLOAD_CS(csPin), maxDevices(nDevice)
@@ -134,52 +134,29 @@ void DigitLed72xx::setDigit(unsigned char digit, byte value, byte dp, unsigned c
   write(digit,value|dp, nDevice);
 }
 
-void DigitLed72xx::printDigit(long number, byte startDigit, unsigned char nDevice)
+void DigitLed72xx::printDigit(long number, unsigned char nDevice, byte startDigit)
 {
   unsigned long num = abs(number);
   byte digit;
   
-  for ( digit=1; num > 0; ++digit ) {
+  for ( digit = startDigit + 1; num > 0; ++digit ) {
         unsigned long temp = num / 10 ;
         byte parsed = charTable[ num-10*temp ];
-        if ((digit == 4) || (digit == 7)) parsed|=DP_FLAG;
+        if (((digit - startDigit) == 4) || ((digit - startDigit) == 7)) parsed|=DP_FLAG;
         write(digit, parsed, nDevice);
         num = temp ;
+        if (digit == 8) break; 
   }
-//  byte decod = (1 << digit) - 1;
-//  for (unsigned char i = 0; i < maxDevices; ++i)
-//    if ((nDevice >= maxDevices) || (i == nDevice))
-//    {
-//      _digitDecode[i] |= decod;
-//       spiTransfer(DECODEMODE_ADDR, _digitDecode[i], i);
-//    }
-
 #if defined(PRINT_DIGIT_NEG)
-  if ((number < 0) && (digit <= _digitLimit[nDevice]))
+  if ((number < 0) && (digit <= 8))
     write(digit, MAX72d, nDevice);
 #endif // PRINT_DIGIT_NEG
-
-  
-//  String figure = String(number);
-//  int figureLength = figure.length();
-//
-//  int parseInt;
-//  char str[2];
-//  for(unsigned char i = 0; i < figure.length(); i++) {
-//    str[0] = figure[i];
-//    str[1] = '\0';
-//    parseInt = (int) strtol(str, NULL, 10);
-//    //table(figureLength - i + startDigit, parseInt);
-//    unsigned char digit = figureLength - i + startDigit;
-//    if (digit < 9)
-//        setDigit(digit, parseInt, 0, nDevice);
-//  }
 }
 
-inline void DigitLed72xx::printDigits(long number, unsigned char nDevice)
-{
-  printDigit(number, 0, nDevice);
-}
+//inline void DigitLed72xx::printDigits(long number, unsigned char nDevice)
+//{
+//  printDigit(number, 0, nDevice);
+//}
 
 //void DigitLed72xx::setChar(unsigned char digit, byte value, byte dp, unsigned char nDevice)
 //{
@@ -188,12 +165,6 @@ inline void DigitLed72xx::printDigits(long number, unsigned char nDevice)
 //  
 //}
 
-//void DigitLed72xx::showDots(uint8_t dots, uint8_t* digits){
-//    for(int i = 0; i < 4; ++i){
-//        digits[i] |= (dots & 0x80);
-//        dots <<= 1;
-//    }
-//}
 void DigitLed72xx::write(byte address, byte data, unsigned char nDevice)
 {
   if(nDevice >= maxDevices)
@@ -254,8 +225,8 @@ void DigitLed72xx::spiTransfer(byte opcode, byte data, unsigned char addr)
 /**
  * Transfers data to a MAX7219/MAX7221 register.
  * 
- * @param address The register to load data into
- * @param value   Value to store in the register
+ * @param opcode The register to load data into
+ * @param data   Value to store in the register
  */
 void DigitLed72xx::spiWrite(byte opcode, byte data)
 {

@@ -34,10 +34,8 @@
 /**
  * @brief This class provied a control interface for MAX7219 and MAX7221 7-seg Led display drivers.
  * @details This Controller Class is mainly target at 7-Segment Led Displays.
- * @warning This object is not thread safe yet.
+ * @warning This object is not thread safe.
  * @note This library implements the 7-segment numeric LED display of 8 digits
- * 
- * @todo make it threading safe
  * 
  * The MAX7219/MAX7221 are compact, serial input/output common-cathode display drivers that interface
  * microprocessors (µPs) to 7-segment numeric LED displays of up to 8 digits, bar-graph displays, or 64 
@@ -47,22 +45,22 @@
  * Library Description
  *
  *  - The host communicates with the MAX72xx using hardware SPI 
- *  - CS/LOAD Pin can be configured in .h
+ *  - CS/LOAD Pin can be configured on constructor
  *
  *
  * Usage
  *
- * Three methods are exposed for use:
+ * These methods are exposed for use:
  *  
- *  1. Begin
- *  This method initializes communication, takes the display out of test mode, clears the screen and sets intensity.
- *  Intensity is set at maximum but can be coinfigured in max7219.h
+ *  1. Constructor
+ *  The Constructor initializes communication, takes the display out of test mode, clears the screen and sets intensity.
+ *  Intensity is set at minimum but can be coinfigured by setBright(brightness, nDevice)
  *  
- *  2. DisplayChar(Digit, Value, DP)
- *  This method displays a single value (charachter) in position DIGIT (0=right most digit, 7=left most digit)
+ *  2. printDigit(number, startDigit, nDevice)
+ *  This method displays a number value (charachter) from position startDigit (0=right most digit, 7=left most digit)
  *  
- *  3. DisplayText(Text, Justify)
- *  This method displays a text string (Text) either right justified (Justify=0) ot left justified (Justify=1)
+ *  3. write(address, data, nDevice)
+ *  This method displays a single character (symbol) by sending a code directly to the driver
  *  
  */
 
@@ -94,7 +92,7 @@ class DigitLed72xx {
         void shiftAll(unsigned char nDevice = 1);
        /*
         * Description:
-        *    Clears the SRAM and sends a shutdown command to the MAX7219(s).
+        *    Stop the SPI and sends a shutdown command to the MAX7219(s).
         */
        inline void end(void);
         
@@ -112,16 +110,17 @@ class DigitLed72xx {
         
   public:
        /*
-        * @brief Construct a new LedController for use with hardware SPI
+        * @brief Construct a new DigitLed72xx controller for use with hardware SPI
         * 
         * @param csPin The pin to select the device (CS)
         * @param nDevice The number of connected devices that can be controled (defualt 1)
+        * @param spiClass The oject that drives the SPI hardware (a SPIClass instance)
         */
     DigitLed72xx(unsigned char csPin = SS, unsigned char nDevice = 1, SPIClass& spiClass = SPI);
 
         /*
         * Description:
-        *   This is the destructor, it simply calls end().
+        *   This is the destructor, it simply calls end() and free memory.
         */
     ~DigitLed72xx() { 
       end(); 
@@ -129,7 +128,7 @@ class DigitLed72xx {
     }
 
      /**
-     * @brief Set the Intensity of the whole display chain to the given value.
+     * @brief Set the Intensity of the whole display to the given value.
      * @note if you want to save more energy disable segments you don't need or lower the brightness.
      * @param brightness the new brightness of the chain. (0..15)
      * @param nDevice the address of the device to control
@@ -138,7 +137,7 @@ class DigitLed72xx {
  
     /**
      * @brief Set the number of digits to be displayed.
-     * @note See datasheet for sideeffects of the scanlimit on the brightness of the display.
+     * @note See datasheet for side-effects of the scanlimit on the brightness of the display.
      * @param limit The number of digits to be displayed (1..8)
      * @param nDevice The device which should be addressed
      */
@@ -156,14 +155,25 @@ class DigitLed72xx {
          *  '0','1','2','3','4','5','6','7','8','9',
          *  '-',' ' 
          * Params:
-         * nDevice address of the display
-         * digit  the position of the digit on the display (0..7)
-         * value  the value to be displayed. (0x00..0x09)
-         * dp sets the decimal point.
+         * nDevice The address of the display
+         * digit  The position of the digit on the display (0..7)
+         * value  The value to be displayed. (0x00..0x09)
+         * dp sets The decimal point.
          */
     void setDigit(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 0);
-    void printDigit(long number, byte startDigit = 0, unsigned char nDevice = 0);
-    inline void printDigits(long number, unsigned char nDevice = 0);
+
+        /* 
+         * @brief Display a whole number on a 7-Segment Display
+         * @note There are only a few characters that make sense here :
+         *  '0','1','2','3','4','5','6','7','8','9',
+         *  '-',' ' 
+         * Params:
+         * nDevice Theaddress of the display
+         * startDigit  The position of the digit on the display (0..7)
+         * number  The value to be displayed and sets the decimal point every thousands.
+         */
+    void printDigit(long number, unsigned char nDevice = 0, byte startDigit = 0);
+//    inline void printDigits(long number, unsigned char nDevice = 0);
     
 /**
  * Light up 'dot' at position.
