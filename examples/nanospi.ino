@@ -14,10 +14,7 @@
   
  */
 #include <SPI.h>
-#define SPIMAXSPEED (20000000)
-// Uncomment to print minus sign on negative numbers
-#define PRINT_DIGIT_NEG 1
-#include "DigitLed72xx.h"
+#include <DigitLed72xx.h>
 
 // What pin on the Arduino connects to the LOAD/CS pin on the MAX7219/MAX7221
 #define LOAD_PIN 7

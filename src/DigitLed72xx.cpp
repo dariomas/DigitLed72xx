@@ -95,7 +95,7 @@ inline void DigitLed72xx::begin(void)
 #endif // SPI_HAS_TRANSACTION
 }
 
-inline void DigitLed72xx::end ()
+void DigitLed72xx::end(void)
   {
     if (_digitLimit) delete[] _digitLimit;
     //sendToAll shutdown mode (ie. turn it off)
@@ -144,12 +144,12 @@ void DigitLed72xx::clear(unsigned char nDevice)
         spiTransfer(i, MAX72b, j);    
 }
 
-inline void DigitLed72xx::on(unsigned char nDevice) 
+void DigitLed72xx::on(unsigned char nDevice) 
 {
   write(SHUTDOWN_ADDR, OP_ON, nDevice);
 }
 
-inline void DigitLed72xx::off(unsigned char nDevice) 
+void DigitLed72xx::off(unsigned char nDevice) 
 {
   write(SHUTDOWN_ADDR, OP_OFF, nDevice);
 }

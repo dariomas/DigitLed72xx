@@ -85,7 +85,7 @@
  */
 
 #ifndef SPIMAXSPEED
-    #define SPIMAXSPEED (1000000)
+    #define SPIMAXSPEED (20000000)
 #endif
 // Uncomment to print minus sign on negative numbers
 // #define PRINT_DIGIT_NEG 1
@@ -118,7 +118,7 @@ class DigitLed72xx {
         * @brief Stop the SPI and sends a shutdown command to the MAX7219(s).
         * 
         */
-       inline void end(void);
+       void end(void);
         
        // Pointer to the SPI class
        SPIClass* spi;
@@ -238,8 +238,8 @@ class DigitLed72xx {
          * @param nDevice The address of the display to control
          * @note the device goes into power-down mode or normal operation.
          **/    
-    inline void on(unsigned char nDevice = 0);
-    inline void off(unsigned char nDevice = 0);   
+    void on(unsigned char nDevice = 0);
+    void off(unsigned char nDevice = 0);   
 
         /*
          * @brief Gets the number of devices attached
