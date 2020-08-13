@@ -28,13 +28,13 @@
 DigitLed72xx::DigitLed72xx(unsigned char csPin, unsigned char nDevice, SPIClass& spiClass):spi(&spiClass), pinLOAD_CS(csPin), maxDevices(nDevice)
 {
   _digitLimit = new byte[maxDevices];
-  for (byte i=0; i < maxDevices; ++i) _digitLimit[i] = 8;
+  for (byte i=0; i < maxDevices; ++i) {
+    _digitLimit[i] = 8;
+  }
   // Set load pin to output
   //pinLOAD_CS = csPin;
   pinMode(pinLOAD_CS, OUTPUT);
   digitalWrite(pinLOAD_CS,HIGH);
-  
-  //spi = &spiClass; 
     
   // Start SPI
   spi->begin();
@@ -46,25 +46,20 @@ DigitLed72xx::DigitLed72xx(unsigned char csPin, unsigned char nDevice, SPIClass&
   spi->setDataMode(SPI_MODE0);
 #endif // SPI_HAS_TRANSACTION
   
+  spiWrite(DISPLAYTEST_ADDR, OP_OFF);
   //we go into shutdown-mode on startup
   spiWrite(SHUTDOWN_ADDR, OP_OFF);
-  spiWrite(DISPLAYTEST_ADDR, OP_OFF);
   //scanlimit is set to max on startup
   spiWrite(SCANLIMIT_ADDR, 7); // show 8 digits
-  //decode is done in BCD Code B
-  spiWrite(DECODEMODE_ADDR,0xFF);
+  //decode is done in raw mode
+  spiWrite(DECODEMODE_ADDR,0);
   //clearSegments
   for (unsigned char i = 1; i<9; ++i)
     spiWrite(i, MAX72b); // blank
-  // min power
-  spiWrite(BRIGHTNESS_ADDR,0);
+  spiWrite(BRIGHTNESS_ADDR,0);  // min power
 //  spiWrite(SHUTDOWN_ADDR, OP_ON); 
   if (nDevice > 1)
-  {
-    //maxDevices = nDevice;
-    // shiftout no_op
-    shiftAll();
-  }
+    shiftAll(); // shiftout no_op
 
 #if defined(SPI_HAS_TRANSACTION)
   spi->endTransaction();
@@ -132,8 +127,8 @@ inline void DigitLed72xx::off(unsigned char nDevice)
 
 void DigitLed72xx::setDigit(unsigned char digit, byte value, byte dp, unsigned char nDevice)
 {
-//  if(digit > _digitLimit[nDevice])
-//        return;
+  if(digit > 8)
+        return;
   if (dp>0)
       dp = DP_FLAG;
   write(digit,value|dp, nDevice);
@@ -141,18 +136,29 @@ void DigitLed72xx::setDigit(unsigned char digit, byte value, byte dp, unsigned c
 
 void DigitLed72xx::printDigit(long number, byte startDigit, unsigned char nDevice)
 {
-  unsigned long temp, num;
-  num = abs(number);
-  char zero = 0;
- 
-  for ( byte digit=1; num > 0; ++digit ) {
-        temp = num / 10 ;
-        byte parsed = num-10*temp;
-        byte dp = 0;
+  unsigned long num = abs(number);
+  byte digit;
+  
+  for ( digit=1; num > 0; ++digit ) {
+        unsigned long temp = num / 10 ;
+        byte parsed = charTable[ num-10*temp ];
         if ((digit == 4) || (digit == 7)) parsed|=DP_FLAG;
-        setDigit(digit, parsed, 0, nDevice);
+        write(digit, parsed, nDevice);
         num = temp ;
   }
+//  byte decod = (1 << digit) - 1;
+//  for (unsigned char i = 0; i < maxDevices; ++i)
+//    if ((nDevice >= maxDevices) || (i == nDevice))
+//    {
+//      _digitDecode[i] |= decod;
+//       spiTransfer(DECODEMODE_ADDR, _digitDecode[i], i);
+//    }
+
+#if defined(PRINT_DIGIT_NEG)
+  if ((number < 0) && (digit <= _digitLimit[nDevice]))
+    write(digit, MAX72d, nDevice);
+#endif // PRINT_DIGIT_NEG
+
   
 //  String figure = String(number);
 //  int figureLength = figure.length();
@@ -175,12 +181,12 @@ inline void DigitLed72xx::printDigits(long number, unsigned char nDevice)
   printDigit(number, 0, nDevice);
 }
 
-void DigitLed72xx::setChar(unsigned char digit, byte value, byte dp, unsigned char nDevice)
-{
-  if(nDevice > maxDevices || digit >= _digitLimit[nDevice])
-        return;
-  
-}
+//void DigitLed72xx::setChar(unsigned char digit, byte value, byte dp, unsigned char nDevice)
+//{
+//  if(nDevice > maxDevices || digit >= _digitLimit[nDevice])
+//        return;
+//  
+//}
 
 //void DigitLed72xx::showDots(uint8_t dots, uint8_t* digits){
 //    for(int i = 0; i < 4; ++i){
@@ -207,7 +213,7 @@ void DigitLed72xx::write(byte address, byte data, unsigned char nDevice)
 
 /* Write to one of the drivers registers. No-ops are sent to all other 
    drivers in the chain.
-   Driver is the driver number in the chain 
+   addr is the driver number in the chain 
    */
 void DigitLed72xx::spiTransfer(byte opcode, byte data, unsigned char addr)
 {
@@ -268,173 +274,3 @@ void DigitLed72xx::spiWrite(byte opcode, byte data)
   //__asm("nop");
   digitalWrite(pinLOAD_CS, HIGH);
 }
-
-
-/* Loads a text string into the output buffer using the seven segment 
-   character set */
-//void HCMAX7219::print7Seg(char TextString[], unsigned int Offset)
-//{
-//  unsigned int _StringLength;
-//  unsigned int bufferindex;
-//  byte charindex;
-//  
-//  _StringLength = strlen(TextString);
-//  
-//  /* Set output buffer pointer */
-//  if(Offset < DISPLAYBUFFERSIZE)
-//  {
-//    bufferindex = Offset;
-//  }else
-//  {
-//    bufferindex = DISPLAYBUFFERSIZE;
-//  }
-//  
-//  /* If text runs beyond the output buffer then crop it */
-//  charindex = 0;
-//  if (Offset > DISPLAYBUFFERSIZE)
-//    charindex = Offset - (DISPLAYBUFFERSIZE);
-//
-//  /* Copy text into output buffer */
-//  while(bufferindex != 0 && charindex != _StringLength)
-//  {
-//     bufferindex--;
-//   DisplayBuffer[bufferindex] = SevenSegChar[TextString[charindex] - 32];
-//     charindex++;
-//  } 
-//}
-
-/* Loads an integer into the output buffer using the seven segment 
-   character set */
-//void HCMAX7219::print7Seg(long number, unsigned int Offset)
-//{
-//  char Digits[10];
-//  byte index = 0;
-//  long Temp;
-//  unsigned int bufferindex;
-//
-//  Temp = number;
-//  
-// /*Is the number negative ? If so then remove the sign */
-//  if (Temp < 0)
-//    Temp *= -1;
-//
-//  /* Is the number zero ? */
-//  if (Temp == 0)
-//  {
-//    Digits[index] = '0';
-//    index++;
-//  }else
-//  {
-//    /* Convert the number to an ASCII decimal string */
-//    while (Temp)
-//    {
-//      Digits[index] = (Temp % 10) + 48;
-//      Temp /= 10;
-//      index++;
-//    } 
-//   
-//    /* If the number was negative add the sign */ 
-//    if (number < 0)
-//    {
-//      Digits[index] = '-';
-//      index++;
-//    }
-//  }
-//  
-//  /* Set output buffer pointer */
-//  if(Offset < DISPLAYBUFFERSIZE)
-//  {
-//    bufferindex = Offset;
-//  }else
-//  {
-//    bufferindex = DISPLAYBUFFERSIZE;
-//  } 
-//   
-//  /* If text runs beyond the output buffer then crop it */ 
-//  if (Offset > DISPLAYBUFFERSIZE)
-//    index = index - (Offset - DISPLAYBUFFERSIZE);
-//   
-//  /* Copy text into output buffer */
-//  while(index && bufferindex)
-//  {
-//    index--;
-//    bufferindex--;
-//    DisplayBuffer[bufferindex] = SevenSegChar[Digits[index]-32];
-//  }
-//}
-
-
-/* Loads a decimal number into the output buffer using the seven segment 
-   character set */
-//void HCMAX7219::print7Seg(long number, byte decimalPlace, unsigned int Offset)
-//{
-//
-//  char Digits[10];
-//  byte index = 0;
-//  long Temp;
-//  unsigned int bufferindex;
-//
-//  Temp = number;
-//  
-// /*Is the number negative ? If so then remove the sign */
-//  if (Temp < 0)
-//    Temp *= -1;
-//
-//  /* Is the number zero ? */  
-//  if (Temp == 0)
-//  {
-//    Digits[index] = '0';
-//    index++;
-//  }else
-//  {
-//  /* Convert the number to an ASCII decimal string */
-//    while (Temp)
-//    {
-//      Digits[index] = (Temp % 10) + 48;
-//      Temp /= 10;
-//      index++;
-//    } 
-//  }
-//  
-//  /* If decimal place is at the beginning of the number then pad it 
-//     with a zero */
-//  if (decimalPlace == index)
-//  {
-//    Digits[index] = '0';
-//    index++;
-//  }
-//   
-//  /* If the number was negative add the sign */ 
-//  if (number < 0)
-//  {
-//    Digits[index] = '-';
-//    index++;
-//  }
-//  
-//  /* Set output buffer pointer */
-//  if(Offset < DISPLAYBUFFERSIZE)
-//  {
-//    bufferindex = Offset;
-//  }else
-//  {
-//    bufferindex = DISPLAYBUFFERSIZE;
-//  } 
-//   
-//  /* If text runs beyond the output buffer then crop it */  
-//  if (Offset > DISPLAYBUFFERSIZE)
-//    index = index - (Offset - DISPLAYBUFFERSIZE);
-//
-//  /* Copy text into output buffer */
-//  while(index && bufferindex)
-//  {
-//    index--;
-//    bufferindex--;
-//    if(decimalPlace !=0 && index == decimalPlace)
-//    {
-//      DisplayBuffer[bufferindex] = SevenSegChar[Digits[index]-32] |  SevenSegChar[14];
-//    }else
-//    {
-//      DisplayBuffer[bufferindex] = SevenSegChar[Digits[index]-32];
-//    } 
-//  }
-//}

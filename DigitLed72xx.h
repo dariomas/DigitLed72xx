@@ -69,6 +69,8 @@
 #ifndef SPIMAXSPEED
     #define SPIMAXSPEED (1000000)
 #endif
+// Uncomment to print minus sign on negative numbers
+// #define PRINT_DIGIT_NEG 1
 
 // the MAX7219 address map (datasheet table 2)
 #define NOOP_ADDR        (0x00)
@@ -80,12 +82,8 @@
 
 #define OP_OFF   (0x0)
 #define OP_ON    (0x1)
-#define MAX72d      (0xA) // '-'
-#define MAX72E      (0xB) // 'E'
-#define MAX72H      (0xC) // 'H'
-#define MAX72L      (0xD) // 'L'
-#define MAX72P      (0xE) // 'P'
-#define MAX72b      (0xF) // ' '
+#define MAX72d   (0x1)       // '-'
+#define MAX72b   (0x0)       // ' '
 #define DP_FLAG  (B10000000) // '.'
 
 class DigitLed72xx {
@@ -108,6 +106,9 @@ class DigitLed72xx {
         unsigned char maxDevices = 1;
 
         byte * _digitLimit;
+        const byte charTable[10] = {
+    B01111110,B00110000,B01101101,B01111001,B00110011,B01011011,B01011111,B01110000,B01111111,B01111011
+        };
         
   public:
        /*
@@ -122,7 +123,10 @@ class DigitLed72xx {
         * Description:
         *   This is the destructor, it simply calls end().
         */
-    ~DigitLed72xx() { end(); if (_digitLimit) delete[] _digitLimit;};
+    ~DigitLed72xx() { 
+      end(); 
+      if (_digitLimit) delete[] _digitLimit;
+    }
 
      /**
      * @brief Set the Intensity of the whole display chain to the given value.
@@ -142,19 +146,19 @@ class DigitLed72xx {
     inline void setLimit(unsigned char limit, unsigned char nDevice = 0) {
       setDigitLimit(limit, nDevice);
     }
-    inline unsigned char getLimit(unsigned char nDevice = 0) {
-      return _digitLimit[nDevice];
-    }
+//    inline unsigned char getLimit(unsigned char nDevice = 0) {
+//      return _digitLimit[nDevice];
+//    }
 
         /* 
          * @brief Display a single digit on a 7-Segment Display
          * @note There are only a few characters that make sense here :
          *  '0','1','2','3','4','5','6','7','8','9',
-         *  '-','E','H','L','P',' ' 
+         *  '-',' ' 
          * Params:
          * nDevice address of the display
          * digit  the position of the digit on the display (0..7)
-         * value  the value to be displayed. (0x00..0x0F)
+         * value  the value to be displayed. (0x00..0x09)
          * dp sets the decimal point.
          */
     void setDigit(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 0);
@@ -173,8 +177,6 @@ class DigitLed72xx {
  */
 //void MAX7219_clear_dot(uint8_t position);
 
-
-
         /* 
          * @brief Display a character on a 7-Segment display.
          * @note decode mode raw
@@ -184,7 +186,7 @@ class DigitLed72xx {
          * value  the character to be displayed. 
          * dp sets the decimal point.
          */
-    void setChar(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 0);
+//    void setChar(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 0);
 
         /* 
          * @brief Switch all Leds on the display off. 
@@ -199,8 +201,6 @@ class DigitLed72xx {
          */    
     inline void on(unsigned char nDevice = 0);
     inline void off(unsigned char nDevice = 0);   
-
-
 
         /*
          * @brief Gets the number of devices attached
