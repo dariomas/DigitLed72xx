@@ -94,6 +94,11 @@ class DigitLed72xx {
         void spiTransfer(byte opcode, byte data, unsigned char addr);
         void spiWrite(byte opcode, byte data);
         void shiftAll(unsigned char nDevice = 1);
+       /*
+        * Description:
+        *    Clears the SRAM and sends a shutdown command to the MAX7219(s).
+        */
+       inline void end(void);
         
        // Pointer to the SPI class
        SPIClass* spi;
@@ -102,7 +107,7 @@ class DigitLed72xx {
         /* The maximum number of devices we use */
         unsigned char maxDevices = 1;
 
-        unsigned char _digitLimit = 8;
+        byte * _digitLimit;
         
   public:
        /*
@@ -117,13 +122,7 @@ class DigitLed72xx {
         * Description:
         *   This is the destructor, it simply calls end().
         */
-    ~DigitLed72xx() { end(); };
-
-       /*
-        * Description:
-        *    Clears the SRAM and sends a shutdown command to the MAX7219(s).
-        */
-     inline void end(void);
+    ~DigitLed72xx() { end(); if (_digitLimit) delete[] _digitLimit;};
 
      /**
      * @brief Set the Intensity of the whole display chain to the given value.
@@ -140,7 +139,12 @@ class DigitLed72xx {
      * @param nDevice The device which should be addressed
      */
     void setDigitLimit(unsigned char limit, unsigned char nDevice = 0);
-    
+    inline void setLimit(unsigned char limit, unsigned char nDevice = 0) {
+      setDigitLimit(limit, nDevice);
+    }
+    inline unsigned char getLimit(unsigned char nDevice = 0) {
+      return _digitLimit[nDevice];
+    }
 
         /* 
          * @brief Display a single digit on a 7-Segment Display
@@ -193,8 +197,8 @@ class DigitLed72xx {
          * @param nDevice The address of the display to control
          * @note the device goes into power-down mode or normal operation.
          */    
-    void on(unsigned char nDevice = 0);
-    void off(unsigned char nDevice = 0);   
+    inline void on(unsigned char nDevice = 0);
+    inline void off(unsigned char nDevice = 0);   
 
 
 

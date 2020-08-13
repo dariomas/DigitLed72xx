@@ -14,6 +14,7 @@
   
  */
 #include <SPI.h>
+#define SPIMAXSPEED (1000000)
 #include "DigitLed72xx.h"
 
 // What pin on the Arduino connects to the LOAD/CS pin on the MAX7219/MAX7221
@@ -24,9 +25,12 @@ DigitLed72xx ld = DigitLed72xx(LOAD_PIN, NCHIP);
   
 void setup() 
 {
-  ld.on(10);
+  ld.on(2);
   
-  ld.printDigits(76543210, 1);
+  ld.printDigits(76543210, 0);
+  delay(500);
+  ld.printDigits(12345678, 1);
+  delay(500);
 
 }
 
