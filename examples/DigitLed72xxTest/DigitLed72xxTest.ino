@@ -1,5 +1,6 @@
 /*
   Basic code for using Maxim MAX7219/MAX7221 with Arduino.
+  Version 0.0.3
   Wire the Arduino and the MAX7219/MAX7221 together as follows:
   | Arduino   | MAX7219/MAX7221 |
   | --------- | --------------- |
@@ -11,7 +12,8 @@
   For the rest of the wiring follow the wiring diagram found in the datasheet.
   
   Datasheet: http://datasheets.maximintegrated.com/en/ds/MAX7219-MAX7221.pdf
-  
+
+   Thankyoy to Leonardo SAMMARTANO for help and support.
  */
 #include <SPI.h>
 #include <DigitLed72xx.h>

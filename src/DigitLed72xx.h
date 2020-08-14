@@ -6,6 +6,8 @@
  * This library is for use with Maxim's MAX7219 and MAX7221 LED driver chips.
  * Austria Micro Systems' AS1100/1106/1107 is a pin-for-pin compatible and is
  * also supported.
+ * Thankyoy to Leonardo SAMMARTANO for help and support.
+ * 
  * See the example sketches to learn how to use the library in your code.
  *
  * This is the main include file for the library.
@@ -16,7 +18,7 @@
  * MIT license, all text here must be included in any redistribution.
  */
 
-// version 0.0.1
+// Version 0.0.3
 
 #pragma once
 

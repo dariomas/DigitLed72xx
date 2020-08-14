@@ -1,8 +1,11 @@
 # DigitLed72xx Controller
- 
-Arduino MAX7219/7221 Library using hardware SPI
+Version 0.0.3 
 
-Copyright (c) 2020 Dariomas
+Arduino MAX7219/7221 Library using hardware SPI
+From an idea by [Leonardo SAMMARTANO](https://github.com/SaLeeC), made with Leo's help and support.
+
+Copyright (c) 2020 Dariomas & SaLe
+Portions from [MAX7219](https://github.com/csdexter/MAX7219), [DigitLedDisplay](https://github.com/ozhantr/DigitLedDisplay), [LedControl](https://github.com/wayoda/LedControl)
 
 Download
 --------
