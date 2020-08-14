@@ -19,7 +19,7 @@
  * MIT license, all text here must be included in any redistribution.
  */
 
-// Version 0.0.3
+// Version 0.0.4
 
 #include "DigitLed72xx.h"
 /**
@@ -169,12 +169,29 @@ void DigitLed72xx::printDigit(long number, unsigned char nDevice, byte startDigi
 {
   unsigned long num = abs(number);
   byte digit;
-  
+  // shiftout no_op
+  for(unsigned char i=1; i < maxDevices; ++i)
+  {
+    spi->transfer(NOOP_ADDR);
+    spi->transfer(OP_OFF); 
+  }
   for ( digit = startDigit + 1; num > 0; ++digit ) {
         unsigned long temp = num / 10 ;
         byte parsed = charTable[ num-10*temp ];
         if (((digit - startDigit) == 4) || ((digit - startDigit) == 7)) parsed|=DP_FLAG;
-        write(digit, parsed, nDevice);
+        if(nDevice >= maxDevices)
+        {
+#if defined(SPI_HAS_TRANSACTION)
+          spi->beginTransaction(SPISettings (SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+#endif // SPI_HAS_TRANSACTION
+          spiWrite(digit, parsed);
+          shiftAll();
+#if defined(SPI_HAS_TRANSACTION)
+          spi->endTransaction();
+#endif // SPI_HAS_TRANSACTION
+        }
+        else
+          spiTransfer(digit, parsed, nDevice); 
         num = temp ;
         if (digit == 8) break; 
   }
@@ -203,6 +220,12 @@ void DigitLed72xx::write(byte address, byte data, unsigned char nDevice)
 #if defined(SPI_HAS_TRANSACTION)
       spi->beginTransaction(SPISettings (SPIMAXSPEED, MSBFIRST, SPI_MODE0));
 #endif // SPI_HAS_TRANSACTION
+        // shiftout no_op
+      for(unsigned char i=1; i < maxDevices; ++i)
+      {
+        spi->transfer(NOOP_ADDR);
+        spi->transfer(OP_OFF); 
+      }
       spiWrite(address,data);
       shiftAll();
 #if defined(SPI_HAS_TRANSACTION)
@@ -226,6 +249,13 @@ void DigitLed72xx::spiTransfer(byte opcode, byte data, unsigned char addr)
 
   // Set LOAD/CS to LOW
   digitalWrite(pinLOAD_CS, LOW);
+      
+  // shiftout no_op
+  for(unsigned char i=maxDevices; i > addr; --i)
+  {
+      spi->transfer(NOOP_ADDR);
+      spi->transfer(OP_OFF); 
+  }
   
   // Send the register address
   spi->transfer(opcode);
@@ -233,16 +263,8 @@ void DigitLed72xx::spiTransfer(byte opcode, byte data, unsigned char addr)
   spi->transfer(data);
       
   // shiftout no_op
-  for(unsigned char i=0; i < maxDevices; ++i)
+  for(unsigned char i=0; i < addr; ++i)
   {
-      if(i == addr)
-      {
-        // Tell chip to load in data
-        digitalWrite(pinLOAD_CS, HIGH);
-        //__asm("nop");
-        // Ensure LOAD/CS is LOW
-        digitalWrite(pinLOAD_CS, LOW);        
-      } 
       spi->transfer(NOOP_ADDR);
       spi->transfer(OP_OFF); 
   }
