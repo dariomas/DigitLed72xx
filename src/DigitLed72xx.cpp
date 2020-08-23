@@ -168,16 +168,33 @@ void DigitLed72xx::setDigit(unsigned char digit, byte value, byte dp, unsigned c
 void DigitLed72xx::printDigit(long number, unsigned char nDevice, byte startDigit)
 {
   unsigned long num = abs(number);
-  byte digit;
+  byte digit = startDigit + 1;
+  byte parsed = B01111110; //charTable[ 0 ];
   // shiftout no_op
   for(unsigned char i=1; i < maxDevices; ++i)
   {
     spi->transfer(NOOP_ADDR);
     spi->transfer(OP_OFF); 
   }
-  for ( digit = startDigit + 1; num > 0; ++digit ) {
+  if (num == 0)
+  {
+         if(nDevice >= maxDevices)
+        {
+#if defined(SPI_HAS_TRANSACTION)
+          spi->beginTransaction(SPISettings (SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+#endif // SPI_HAS_TRANSACTION
+          spiWrite(digit, parsed);
+          shiftAll();
+#if defined(SPI_HAS_TRANSACTION)
+          spi->endTransaction();
+#endif // SPI_HAS_TRANSACTION
+        }
+        else
+          spiTransfer(digit, parsed, nDevice);    
+  }
+  for ( ; num > 0; ++digit ) {
         unsigned long temp = num / 10 ;
-        byte parsed = charTable[ num-10*temp ];
+        parsed = charTable[ num-10*temp ];
         if (((digit - startDigit) == 4) || ((digit - startDigit) == 7)) parsed|=DP_FLAG;
         if(nDevice >= maxDevices)
         {
