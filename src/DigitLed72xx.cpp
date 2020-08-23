@@ -19,7 +19,7 @@
  * MIT license, all text here must be included in any redistribution.
  */
 
-// Version 0.0.4
+// Version 0.0.5
 
 #include "DigitLed72xx.h"
 /**
