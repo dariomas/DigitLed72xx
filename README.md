@@ -1,7 +1,7 @@
 DigitLed72xx Controller
 =======================
 
-Version 0.0.5
+Version 0.0.6
 
 Arduino MAX7219/7221 Library using hardware SPI
 From an idea by [Leonardo SAMMARTANO](https://github.com/SaLeeC), made with Leo's help and support.

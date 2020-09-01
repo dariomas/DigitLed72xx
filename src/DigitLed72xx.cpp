@@ -19,7 +19,7 @@
  * MIT license, all text here must be included in any redistribution.
  */
 
-// Version 0.0.5
+// Version 0.0.6
 
 #include "DigitLed72xx.h"
 /**
@@ -47,10 +47,11 @@
  * @param  spiClass instance of SPI class
  * 
  */
-DigitLed72xx::DigitLed72xx(unsigned char csPin, unsigned char nDevice, SPIClass& spiClass):spi(&spiClass), pinLOAD_CS(csPin), maxDevices(nDevice)
+DigitLed72xx::DigitLed72xx(unsigned char csPin, unsigned char nDevice, SPIClass &spiClass) : spi(&spiClass), pinLOAD_CS(csPin), maxDevices(nDevice)
 {
   _digitLimit = new byte[maxDevices];
-  for (byte i=0; i < maxDevices; ++i) {
+  for (byte i = 0; i < maxDevices; ++i)
+  {
     _digitLimit[i] = 8;
   }
   begin();
@@ -65,30 +66,30 @@ inline void DigitLed72xx::begin(void)
   // Set load pin to output
   //pinLOAD_CS = csPin;
   pinMode(pinLOAD_CS, OUTPUT);
-  digitalWrite(pinLOAD_CS,HIGH);
-    
+  digitalWrite(pinLOAD_CS, HIGH);
+
   // Start SPI
   spi->begin();
 #if defined(SPI_HAS_TRANSACTION)
-  spi->beginTransaction(SPISettings (SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+  spi->beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
 #else
-  spi->setClockDivider(SPI_CLOCK_DIV16);  // 1 MHz clock
+  spi->setClockDivider(SPI_CLOCK_DIV16); // 1 MHz clock
   spi->setBitOrder(MSBFIRST);
   spi->setDataMode(SPI_MODE0);
 #endif // SPI_HAS_TRANSACTION
-  
+
   spiWrite(DISPLAYTEST_ADDR, OP_OFF);
   //we go into shutdown-mode on startup
   spiWrite(SHUTDOWN_ADDR, OP_OFF);
   //scanlimit is set to max on startup
   spiWrite(SCANLIMIT_ADDR, 7); // show 8 digits
   //decode is done in raw mode
-  spiWrite(DECODEMODE_ADDR,0);
+  spiWrite(DECODEMODE_ADDR, 0);
   //clearSegments
-  for (unsigned char i = 1; i<9; ++i)
-    spiWrite(i, MAX72b); // blank
-  spiWrite(BRIGHTNESS_ADDR,0);  // min power
-//  spiWrite(SHUTDOWN_ADDR, OP_ON); 
+  for (unsigned char i = 1; i < 9; ++i)
+    spiWrite(i, MAX72b);        // blank
+  spiWrite(BRIGHTNESS_ADDR, 0); // min power
+                                //  spiWrite(SHUTDOWN_ADDR, OP_ON);
   if (maxDevices > 1)
     shiftAll(); // shiftout no_op
 
@@ -98,71 +99,73 @@ inline void DigitLed72xx::begin(void)
 }
 
 void DigitLed72xx::end(void)
-  {
-    if (_digitLimit) delete[] _digitLimit;
-    //sendToAll shutdown mode (ie. turn it off)
-    write(SHUTDOWN_ADDR, OP_OFF, maxDevices ); 
-    spi->end ();
-  }
-
-void DigitLed72xx::shiftAll(unsigned char nDevice = 1)
-  {    
-    // shiftout no_op
-    for(unsigned char i=nDevice;i < maxDevices;++i) // (maxDevices - nDevice)
-      spiWrite(NOOP_ADDR, OP_OFF);
-  }
-
-void DigitLed72xx::setBright(unsigned char brightness, unsigned char nDevice) 
 {
-    if (brightness > 15)
-        return;
-    write(BRIGHTNESS_ADDR, brightness, nDevice);
+  if (_digitLimit)
+    delete[] _digitLimit;
+  //sendToAll shutdown mode (ie. turn it off)
+  write(SHUTDOWN_ADDR, OP_OFF, maxDevices);
+  spi->end();
 }
 
-        /*!
+void DigitLed72xx::shiftAll(unsigned char nDevice = 1)
+{
+  // shiftout no_op
+  for (unsigned char i = nDevice; i < maxDevices; ++i) // (maxDevices - nDevice)
+    spiWrite(NOOP_ADDR, OP_OFF);
+}
+
+void DigitLed72xx::setBright(unsigned char brightness, unsigned char nDevice)
+{
+  if (brightness > 15)
+    return;
+  write(BRIGHTNESS_ADDR, brightness, nDevice);
+}
+
+/*!
          * @brief Set the number of digits to be displayed.
          * See datasheet for sideeffects of the scanlimit on the brightness
          * of the display.
          * @param limit  number of digits to be displayed (1..8)
          * @param nDevice address of the display to control
-         */    
-void DigitLed72xx::setDigitLimit(unsigned char limit, unsigned char nDevice) 
+         */
+void DigitLed72xx::setDigitLimit(unsigned char limit, unsigned char nDevice)
 {
-  if((limit == 0) || (limit > 8)) return;
+  if ((limit == 0) || (limit > 8))
+    return;
   for (unsigned char i = 0; i < maxDevices; ++i)
     if ((nDevice >= maxDevices) || (i == nDevice))
     {
       _digitLimit[i] = limit;
-       spiTransfer(SCANLIMIT_ADDR, limit - 1, i);
+      spiTransfer(SCANLIMIT_ADDR, limit - 1, i);
     }
 }
 
-void DigitLed72xx::clear(unsigned char nDevice) 
+void DigitLed72xx::clear(unsigned char nDevice)
 {
   for (unsigned char j = 0; j < maxDevices; ++j)
     if ((nDevice >= maxDevices) || (j == nDevice))
       //clearSegments
       for (unsigned char i = 1; i <= _digitLimit[j]; ++i)
-        spiTransfer(i, MAX72b, j);    
+        spiTransfer(i, MAX72b, j);
 }
 
-void DigitLed72xx::on(unsigned char nDevice) 
+void DigitLed72xx::on(unsigned char nDevice)
 {
   write(SHUTDOWN_ADDR, OP_ON, nDevice);
 }
 
-void DigitLed72xx::off(unsigned char nDevice) 
+void DigitLed72xx::off(unsigned char nDevice)
 {
   write(SHUTDOWN_ADDR, OP_OFF, nDevice);
 }
 
 void DigitLed72xx::setDigit(unsigned char digit, byte value, byte dp, unsigned char nDevice)
 {
-  if(digit > 8)
-        return;
-  if (dp>0)
-      dp = DP_FLAG;
-  write(digit,value|dp, nDevice);
+  if (digit > 8)
+    return;
+  if (dp > 0)
+    dp = DP_FLAG;
+  write(digit, value | dp, nDevice);
 }
 
 void DigitLed72xx::printDigit(long number, unsigned char nDevice, byte startDigit)
@@ -171,51 +174,57 @@ void DigitLed72xx::printDigit(long number, unsigned char nDevice, byte startDigi
   byte digit = startDigit + 1;
   byte parsed = B01111110; //charTable[ 0 ];
   // shiftout no_op
-  for(unsigned char i=1; i < maxDevices; ++i)
+  for (unsigned char i = 1; i < maxDevices; ++i)
   {
     spi->transfer(NOOP_ADDR);
-    spi->transfer(OP_OFF); 
+    spi->transfer(OP_OFF);
   }
   if (num == 0)
   {
-         if(nDevice >= maxDevices)
-        {
+    if (nDevice >= maxDevices)
+    {
 #if defined(SPI_HAS_TRANSACTION)
-          spi->beginTransaction(SPISettings (SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+      spi->beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
 #endif // SPI_HAS_TRANSACTION
-          spiWrite(digit, parsed);
-          shiftAll();
+      spiWrite(digit, parsed);
+      shiftAll();
 #if defined(SPI_HAS_TRANSACTION)
-          spi->endTransaction();
+      spi->endTransaction();
 #endif // SPI_HAS_TRANSACTION
-        }
-        else
-          spiTransfer(digit, parsed, nDevice);    
+    }
+    else
+      spiTransfer(digit, parsed, nDevice);
   }
-  for ( ; num > 0; ++digit ) {
-        unsigned long temp = num / 10 ;
-        parsed = charTable[ num-10*temp ];
-        if (((digit - startDigit) == 4) || ((digit - startDigit) == 7)) parsed|=DP_FLAG;
-        if(nDevice >= maxDevices)
-        {
+  else
+  {
+    for (; num > 0; ++digit)
+    {
+      unsigned long temp = num / 10;
+      parsed = charTable[num - 10 * temp];
+      num = temp;
+      if (((digit - startDigit) == 4) || ((digit - startDigit) == 7))
+        parsed |= DP_FLAG;
+      if (nDevice >= maxDevices)
+      {
 #if defined(SPI_HAS_TRANSACTION)
-          spi->beginTransaction(SPISettings (SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+        spi->beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
 #endif // SPI_HAS_TRANSACTION
-          spiWrite(digit, parsed);
-          shiftAll();
+        spiWrite(digit, parsed);
+        shiftAll();
 #if defined(SPI_HAS_TRANSACTION)
-          spi->endTransaction();
+        spi->endTransaction();
 #endif // SPI_HAS_TRANSACTION
-        }
-        else
-          spiTransfer(digit, parsed, nDevice); 
-        num = temp ;
-        if (digit == 8) break; 
-  }
+      }
+      else
+        spiTransfer(digit, parsed, nDevice);
+      if (digit == 8)
+        break;
+    }
 #if defined(PRINT_DIGIT_NEG)
-  if ((number < 0) && (digit <= 8))
-    write(digit, MAX72d, nDevice);
+    if ((number < 0) && (digit <= 8))
+      write(digit, MAX72d, nDevice);
 #endif // PRINT_DIGIT_NEG
+  }
 }
 
 //inline void DigitLed72xx::printDigits(long number, unsigned char nDevice)
@@ -227,30 +236,30 @@ void DigitLed72xx::printDigit(long number, unsigned char nDevice, byte startDigi
 //{
 //  if(nDevice > maxDevices || digit >= _digitLimit[nDevice])
 //        return;
-//  
+//
 //}
 
 void DigitLed72xx::write(byte address, byte data, unsigned char nDevice)
 {
-  if(nDevice >= maxDevices)
+  if (nDevice >= maxDevices)
   {
 #if defined(SPI_HAS_TRANSACTION)
-      spi->beginTransaction(SPISettings (SPIMAXSPEED, MSBFIRST, SPI_MODE0));
-#endif // SPI_HAS_TRANSACTION
-        // shiftout no_op
-      for(unsigned char i=1; i < maxDevices; ++i)
-      {
-        spi->transfer(NOOP_ADDR);
-        spi->transfer(OP_OFF); 
-      }
-      spiWrite(address,data);
-      shiftAll();
+    spi->beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+#endif // SPI_HAS_TRANSACTION \
+    // shiftout no_op
+    for (unsigned char i = 1; i < maxDevices; ++i)
+    {
+      spi->transfer(NOOP_ADDR);
+      spi->transfer(OP_OFF);
+    }
+    spiWrite(address, data);
+    shiftAll();
 #if defined(SPI_HAS_TRANSACTION)
-      spi->endTransaction();
+    spi->endTransaction();
 #endif // SPI_HAS_TRANSACTION
   }
   else
-      spiTransfer(address, data, nDevice);
+    spiTransfer(address, data, nDevice);
 }
 
 /*! 
@@ -261,31 +270,31 @@ void DigitLed72xx::write(byte address, byte data, unsigned char nDevice)
 void DigitLed72xx::spiTransfer(byte opcode, byte data, unsigned char addr)
 {
 #if defined(SPI_HAS_TRANSACTION)
-  spi->beginTransaction(SPISettings (SPIMAXSPEED, MSBFIRST, SPI_MODE0));
+  spi->beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
 #endif // SPI_HAS_TRANSACTION
 
   // Set LOAD/CS to LOW
   digitalWrite(pinLOAD_CS, LOW);
-      
+
   // shiftout no_op
-  for(unsigned char i=maxDevices; i > addr; --i)
+  for (unsigned char i = maxDevices; i > addr; --i)
   {
-      spi->transfer(NOOP_ADDR);
-      spi->transfer(OP_OFF); 
+    spi->transfer(NOOP_ADDR);
+    spi->transfer(OP_OFF);
   }
-  
+
   // Send the register address
   spi->transfer(opcode);
   // Send the value
   spi->transfer(data);
-      
+
   // shiftout no_op
-  for(unsigned char i=0; i < addr; ++i)
+  for (unsigned char i = 0; i < addr; ++i)
   {
-      spi->transfer(NOOP_ADDR);
-      spi->transfer(OP_OFF); 
+    spi->transfer(NOOP_ADDR);
+    spi->transfer(OP_OFF);
   }
-   // Tell chip to load in data
+  // Tell chip to load in data
   digitalWrite(pinLOAD_CS, HIGH);
 
 #if defined(SPI_HAS_TRANSACTION)
