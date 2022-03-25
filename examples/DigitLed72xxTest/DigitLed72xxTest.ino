@@ -1,6 +1,6 @@
 /*
   Basic code for using Maxim MAX7219/MAX7221 with Arduino.
-  Version 0.0.3
+  Version 0.0.4
   Wire the Arduino and the MAX7219/MAX7221 together as follows:
   | Arduino   | MAX7219/MAX7221 |
   | --------- | --------------- |
@@ -8,14 +8,15 @@
   | SCK (13)  | CLK (13)        |
   | I/O (7)*  | LOAD/CS (12)    |
     * - This should match the LOAD_PIN constant defined below.
-  
+
   For the rest of the wiring follow the wiring diagram found in the datasheet.
-  
+
   Datasheet: http://datasheets.maximintegrated.com/en/ds/MAX7219-MAX7221.pdf
 
    Thankyoy to Leonardo SAMMARTANO for help and support.
  */
 #include <SPI.h>
+#define PRINT_DIGIT_NEG 1
 #include <DigitLed72xx.h>
 
 // What pin on the Arduino connects to the LOAD/CS pin on the MAX7219/MAX7221
@@ -23,11 +24,11 @@
 #define NCHIP 2
 
 DigitLed72xx ld = DigitLed72xx(LOAD_PIN, NCHIP);
-  
-void setup() 
+
+void setup()
 {
   ld.on(2);
-  
+
   ld.printDigit(76543210);
   delay(500);
   ld.printDigit(43218765, 1);
@@ -36,7 +37,7 @@ void setup()
 }
 
 int n = 0;
-void loop() 
+void loop()
 {
    n = n % (NCHIP + 1);
   /* Prints data to the display */
@@ -93,6 +94,6 @@ void loop()
   /* Clear all display value */
   ld.clear(n);
   delay(500);
-  
+
   ++n;
 }

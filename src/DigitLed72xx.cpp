@@ -7,19 +7,19 @@
  * Austria Micro Systems' AS1100/1106/1107 is a pin-for-pin compatible and is
  * also supported.
  *  Thankyoy to Leonardo SAMMARTANO for help and support.
- * 
+ *
  * See the example sketches to learn how to use the library in your code.
  *
  * This is the main code file for the library.
  * See the header file for better function documentation.
- * 
+ *
  * ---------------------------------------------------------------------------
  * Copyright (c) 2020 Dariomas
  *
  * MIT license, all text here must be included in any redistribution.
  */
 
-// Version 0.0.6
+// Version 0.0.7
 
 #include "DigitLed72xx.h"
 /**
@@ -27,25 +27,25 @@
  * @details This Controller Class is mainly target at 7-Segment Led Displays.
  * @warning This object is not thread safe.
  * @note This library implements the 7-segment numeric LED display of 8 digits
- * 
+ *
  * @todo ...
- * 
+ *
  * The MAX7219/MAX7221 are compact, serial input/output common-cathode display drivers that interface
  * microprocessors (µPs) to 7-segment numeric LED displays of up to 8 digits.
  * Datasheet: https://datasheets.maximintegrated.com/en/ds/MAX7219-MAX7221.pdf
  *
  * Library Description
  *
- *  - The host communicates with the MAX72xx using hardware SPI 
+ *  - The host communicates with the MAX72xx using hardware SPI
  */
 
 /*!
  * @brief Construct a new DigitLed72xx controller for use with hardware SPI
- * 
- * @param  csPin    CS/LOAD pin for selecting the device 
- * @param  nDevice  number of devices that can be controled
+ *
+ * @param  csPin    CS/LOAD pin for selecting the device
+ * @param  nDevice  number of devices that can be controlled
  * @param  spiClass instance of SPI class
- * 
+ *
  */
 DigitLed72xx::DigitLed72xx(unsigned char csPin, unsigned char nDevice, SPIClass &spiClass) : spi(&spiClass), pinLOAD_CS(csPin), maxDevices(nDevice)
 {
@@ -107,7 +107,7 @@ void DigitLed72xx::end(void)
   spi->end();
 }
 
-void DigitLed72xx::shiftAll(unsigned char nDevice = 1)
+void DigitLed72xx::shiftAll(unsigned char nDevice)
 {
   // shiftout no_op
   for (unsigned char i = nDevice; i < maxDevices; ++i) // (maxDevices - nDevice)
@@ -123,7 +123,7 @@ void DigitLed72xx::setBright(unsigned char brightness, unsigned char nDevice)
 
 /*!
          * @brief Set the number of digits to be displayed.
-         * See datasheet for sideeffects of the scanlimit on the brightness
+         * See datasheet for side effects of the scanlimit on the brightness
          * of the display.
          * @param limit  number of digits to be displayed (1..8)
          * @param nDevice address of the display to control
@@ -170,7 +170,7 @@ void DigitLed72xx::setDigit(unsigned char digit, byte value, byte dp, unsigned c
 
 void DigitLed72xx::printDigit(long number, unsigned char nDevice, byte startDigit)
 {
-  unsigned long num = abs(number);
+  unsigned long num = labs(number); //labs(number); for long number
   byte digit = startDigit + 1;
   byte parsed = B01111110; //charTable[ 0 ];
   // shiftout no_op
@@ -245,7 +245,7 @@ void DigitLed72xx::write(byte address, byte data, unsigned char nDevice)
   {
 #if defined(SPI_HAS_TRANSACTION)
     spi->beginTransaction(SPISettings(SPIMAXSPEED, MSBFIRST, SPI_MODE0));
-#endif // SPI_HAS_TRANSACTION \
+#endif // SPI_HAS_TRANSACTION
     // shiftout no_op
     for (unsigned char i = 1; i < maxDevices; ++i)
     {
@@ -262,10 +262,10 @@ void DigitLed72xx::write(byte address, byte data, unsigned char nDevice)
     spiTransfer(address, data, nDevice);
 }
 
-/*! 
- * @brief Write to one of the drivers registers. No-ops are sent to all other 
+/*!
+ * @brief Write to one of the drivers registers. No-ops are sent to all other
  * drivers in the chain.
- * @param addr is the driver number in the chain 
+ * @param addr is the driver number in the chain
 */
 void DigitLed72xx::spiTransfer(byte opcode, byte data, unsigned char addr)
 {
@@ -304,7 +304,7 @@ void DigitLed72xx::spiTransfer(byte opcode, byte data, unsigned char addr)
 
 /**
  * Transfers data to a MAX7219/MAX7221 register.
- * 
+ *
  * @param opcode The register to load data into
  * @param data   Value to store in the register
  */

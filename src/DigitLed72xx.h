@@ -7,18 +7,18 @@
  * Austria Micro Systems' AS1100/1106/1107 is a pin-for-pin compatible and is
  * also supported.
  * Thankyoy to Leonardo SAMMARTANO for help and support.
- * 
+ *
  * See the example sketches to learn how to use the library in your code.
  *
  * This is the main include file for the library.
- * 
+ *
  * ---------------------------------------------------------------------------
  * Copyright (c) 2020 Dariomas
  *
  * MIT license, all text here must be included in any redistribution.
  */
 
-// Version 0.0.3
+// Version 0.0.4
 
 #pragma once
 
@@ -58,32 +58,34 @@
  * @details This Controller Class is mainly target at 7-Segment Led Displays.
  * @warning This object is not thread safe.
  * @note This library implements the 7-segment numeric LED display of 8 digits
- * 
+ *
  * The MAX7219/MAX7221 are compact, serial input/output common-cathode display drivers that interface
- * microprocessors (µPs) to 7-segment numeric LED displays of up to 8 digits, bar-graph displays, or 64 
+ * microprocessors (µPs) to 7-segment numeric LED displays of up to 8 digits, bar-graph displays, or 64
  * individual LEDs
  * Datasheet  : https://datasheets.maximintegrated.com/en/ds/MAX7219-MAX7221.pdf
  *
  * Library Description
  *
- *  - The host communicates with the MAX72xx using hardware SPI 
+ *  - The host communicates with the MAX72xx using hardware SPI
  *  - CS/LOAD Pin can be configured on constructor
  *
  *
  * Usage
  *
  * These methods are exposed for use:
- *  
+ *
  *  1. Constructor
  *  The Constructor initializes communication, takes the display out of test mode, clears the screen and sets intensity.
  *  Intensity is set at minimum but can be coinfigured by setBright(brightness, nDevice)
- *  
+ *  Device number (nDevice) start at 0 up to number of devices controlled,
+ *  Parameter nDevice >= number of devices initialised in constructor, broadcast to all devices
+ *
  *  2. printDigit(number, startDigit, nDevice)
  *  This method displays a number value (charachter) from position startDigit (0=right most digit, 7=left most digit)
- *  
+ *
  *  3. write(address, data, nDevice)
  *  This method displays a single character (symbol) by sending a code directly to the driver
- *  
+ *
  */
 
 #ifndef SPIMAXSPEED
@@ -109,9 +111,9 @@
 class DigitLed72xx
 {
 private:
-    /*! 
-         * @brief Send out a single command to the device 
-         * 
+    /*!
+         * @brief Send out a single command to the device
+         *
          */
     void spiTransfer(byte opcode, byte data, unsigned char addr);
     void spiWrite(byte opcode, byte data);
@@ -119,7 +121,7 @@ private:
 
     /*!
         * @brief Stop the SPI and sends a shutdown command to the MAX7219(s).
-        * 
+        *
         */
     void end(void);
 
@@ -137,7 +139,7 @@ private:
 public:
     /**
      * @brief Construct a new DigitLed72xx controller for use with hardware SPI
-     * 
+     *
      * @param csPin The pin to select the device (CS)
      * @param nDevice The number of connected devices that can be controled (defualt 1)
      * @param spiClass The oject that drives the SPI hardware (a SPIClass instance)
@@ -146,7 +148,7 @@ public:
 
     /**
         * @brief This is the destructor, it simply calls end() to free memory.
-        * 
+        *
         */
     ~DigitLed72xx()
     {
@@ -171,7 +173,7 @@ public:
      * @brief Set the number of digits to be displayed.
      * @note See datasheet for side-effects of the scanlimit on the brightness of the display.
      * @param limit The number of digits to be displayed (1..8)
-     * @param nDevice The device which should be addressed
+     * @param nDevice The device which should be addressed (0..)
      */
     void setDigitLimit(unsigned char limit, unsigned char nDevice = 0);
     inline void setLimit(unsigned char limit, unsigned char nDevice = 0)
@@ -182,11 +184,11 @@ public:
     //      return _digitLimit[nDevice];
     //    }
 
-    /** 
+    /**
          * @brief Display a single digit on a 7-Segment Display
          * @note There are only a few characters that make sense here :
          *  '0','1','2','3','4','5','6','7','8','9',
-         *  '-',' ' 
+         *  '-',' '
          * Params:
          * @param nDevice The address of the display
          * @param digit  The position of the digit on the display (0..7)
@@ -195,13 +197,13 @@ public:
          **/
     void setDigit(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 0);
 
-    /** 
+    /**
          * @brief Display a whole number on a 7-Segment Display
          * @note There are only a few characters that make sense here :
          *  '0','1','2','3','4','5','6','7','8','9',
-         *  '-',' ' 
+         *  '-',' '
          * Params:
-         * @param nDevice Theaddress of the display
+         * @param nDevice The address of the display
          * @param startDigit  The position of the digit on the display (0..7)
          * @param number  The value to be displayed and sets the decimal point every thousands.
          */
@@ -220,24 +222,24 @@ public:
  */
     //void MAX7219_clear_dot(uint8_t position);
 
-    /* 
+    /*
          * @brief Display a character on a 7-Segment display.
          * @note decode mode raw
          * Params:
          * nDevice address of the display
          * digit  the position of the character on the display (0..7)
-         * value  the character to be displayed. 
+         * value  the character to be displayed.
          * dp sets the decimal point.
          */
     //    void setChar(unsigned char digit, byte value, byte dp = 0, unsigned char nDevice = 0);
 
-    /** 
-         * @brief Switch all Leds on the display off. 
+    /**
+         * @brief Switch all Leds on the display off.
          * @param nDevice address of the display to control
          **/
     void clear(unsigned char nDevice = 0);
 
-    /** 
+    /**
          * @brief Set the shutdown (power saving) mode for the device
          * @param nDevice The address of the display to control
          * @note the device goes into power-down mode or normal operation.
@@ -248,7 +250,7 @@ public:
     /*
          * @brief Gets the number of devices attached
          * Returns :
-         * char  the number of devices on this LedControl
+         * char  the number of connected devices
          */
     //char getDeviceCount();
 
